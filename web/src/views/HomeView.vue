@@ -28,6 +28,12 @@
           <span :class="{ spin: library.scanning }">⟳</span>
           {{ library.scanning ? scanLabel : '重新扫描' }}
         </button>
+        <button
+          class="btn"
+          :class="{ 'btn-primary': disguiseLaunch }"
+          :title="disguiseLaunch ? '已开启：点书直接进伪装模式' : '开启后点书直接进伪装模式（Cursor/VS Code/终端）'"
+          @click="toggleDisguiseLaunch"
+        >🎭 {{ disguiseLaunch ? '伪装开' : '伪装' }}</button>
         <button class="btn" @click="showSettings = true">⚙ 设置</button>
       </div>
     </header>
@@ -225,7 +231,16 @@ function toggleView() {
 }
 
 function openBook(book) {
-  router.push({ name: 'reader', params: { id: book.id } })
+  const query = {}
+  if (disguiseLaunch.value && book.format === 'epub') {
+    query.disguise = localStorage.getItem('disguise-theme') || 'cursor'
+  }
+  router.push({ name: 'reader', params: { id: book.id }, query })
+}
+
+function toggleDisguiseLaunch() {
+  disguiseLaunch.value = !disguiseLaunch.value
+  localStorage.setItem('disguise-launch', disguiseLaunch.value ? '1' : '0')
 }
 
 async function onDirSaved() {

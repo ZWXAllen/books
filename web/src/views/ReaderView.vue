@@ -33,6 +33,12 @@
         <button class="btn panel-btn" :class="{ active: panelOpen }" @click="panelOpen = !panelOpen">
           ✎ 批注 <em v-if="annotations.length">{{ annotations.length }}</em>
         </button>
+        <button
+          v-if="book?.format === 'epub'"
+          class="btn disguise-btn"
+          title="伪装模式：看起来像 Cursor / VS Code / 终端 (Ctrl+Shift+D)"
+          @click="enterDisguise"
+        >🎭 伪装</button>
         <button class="btn reset-btn" title="清除这本书的阅读进度" @click="resetProgress">↺</button>
       </div>
     </header>
@@ -118,6 +124,19 @@
     <transition name="fade">
       <div v-if="toast" class="toast">{{ toast }}</div>
     </transition>
+
+    <DisguiseReader
+      v-if="disguiseOn && book?.format === 'epub'"
+      :book-id="book.id"
+      :file-url="fileUrl"
+      :book-title="book.title"
+      :book-author="book.author || ''"
+      :initial-page="disguisePage"
+      :theme="disguiseTheme"
+      @exit="exitDisguise"
+      @progress="onDisguiseProgress"
+      @theme-change="onDisguiseTheme"
+    />
   </div>
 </template>
 
@@ -132,6 +151,7 @@ import EpubReader from '../components/EpubReader.vue'
 import AnnotationPanel from '../components/AnnotationPanel.vue'
 import SelectionToolbar from '../components/SelectionToolbar.vue'
 import NoteEditor from '../components/NoteEditor.vue'
+import DisguiseReader from '../components/DisguiseReader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -162,6 +182,9 @@ let pending = null
 
 const fontSize = ref(Number(localStorage.getItem('reader-font') || 100))
 const layoutMode = ref(localStorage.getItem('reader-layout') || 'spread')
+const disguiseOn = ref(false)
+const disguiseTheme = ref(localStorage.getItem('disguise-theme') || 'cursor')
+const disguisePage = ref(0)
 
 function toggleLayout() {
   layoutMode.value = layoutMode.value === 'spread' ? 'single' : 'spread'
@@ -208,6 +231,16 @@ onMounted(async () => {
   ready.value = true
 
   window.addEventListener('keydown', onKeydown)
+
+  // ?disguise=1|cursor|vscode|terminal 直接进入伪装
+  const dq = String(route.query.disguise || '')
+  if (dq && book.value?.format === 'epub') {
+    if (['cursor', 'vscode', 'terminal'].includes(dq)) {
+      disguiseTheme.value = dq
+      localStorage.setItem('disguise-theme', dq)
+    }
+    enterDisguise()
+  }
 })
 
 onBeforeUnmount(() => {
@@ -219,6 +252,19 @@ onBeforeUnmount(() => {
 function onKeydown(e) {
   const tag = e.target?.tagName
   if (tag === 'INPUT' || tag === 'TEXTAREA') return
+
+  // Ctrl/Cmd + Shift + D 开关伪装模式
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+    e.preventDefault()
+    if (book.value?.format === 'epub') {
+      if (disguiseOn.value) exitDisguise()
+      else enterDisguise()
+    }
+    return
+  }
+
+  if (disguiseOn.value) return // 伪装层自己处理方向键
+
   if (e.key === 'Escape') {
     if (noteTarget.value) noteTarget.value = null
     else if (selection.value) selection.value = null
@@ -234,6 +280,36 @@ function onKeydown(e) {
     if (readerRef.value?.prevPage) readerRef.value.prevPage()
     else if (readerRef.value?.prev) readerRef.value.prev()
   }
+}
+
+function enterDisguise() {
+  if (book.value?.format !== 'epub') {
+    showToast('伪装模式目前仅支持 EPUB')
+    return
+  }
+  try {
+    const saved = Number(localStorage.getItem('disguise_page_' + bookId) || '0')
+    disguisePage.value = Number.isFinite(saved) ? saved : 0
+  } catch {
+    disguisePage.value = 0
+  }
+  disguiseOn.value = true
+  panelOpen.value = false
+  selection.value = null
+}
+
+function exitDisguise() {
+  disguiseOn.value = false
+  document.title = (book.value?.title ? book.value.title + ' · ' : '') + '书架'
+}
+
+function onDisguiseTheme(theme) {
+  disguiseTheme.value = theme
+  localStorage.setItem('disguise-theme', theme)
+}
+
+function onDisguiseProgress(p) {
+  onProgress(p)
 }
 
 /* ------------------------------ 进度 ------------------------------ */
@@ -710,5 +786,14 @@ function goHome() {
   border-radius: 20px;
   box-shadow: var(--shadow-lg);
   z-index: 1300;
+}
+
+.disguise-btn {
+  border-color: #3d4f7a;
+  color: #c8d4ff;
+  background: #1a2338;
+}
+.disguise-btn:hover {
+  background: #243152;
 }
 </style>
