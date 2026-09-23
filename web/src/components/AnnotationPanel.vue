@@ -9,7 +9,17 @@
           目录
         </button>
       </div>
-      <button class="btn btn-ghost btn-icon" @click="$emit('close')" title="收起">✕</button>
+      <div class="head-actions">
+        <button
+          v-if="tab === 'notes' && annotations.length"
+          class="btn btn-ghost btn-icon export-btn"
+          @click="exportMarkdownNotes(book, annotations)"
+          title="导出 Markdown 读书笔记"
+        >
+          📥
+        </button>
+        <button class="btn btn-ghost btn-icon" @click="$emit('close')" title="收起">✕</button>
+      </div>
     </div>
 
     <div v-if="tab === 'notes'" class="p-body">
@@ -57,8 +67,10 @@
 <script setup>
 import { ref } from 'vue'
 import { colorOf } from '../constants.js'
+import { exportMarkdownNotes } from '../lib/sync.js'
 
 const props = defineProps({
+  book: { type: Object, default: null },
   annotations: { type: Array, default: () => [] },
   toc: { type: Array, default: () => [] },
   open: Boolean,
@@ -107,6 +119,21 @@ function formatTime(ts) {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.export-btn {
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.export-btn:hover {
+  color: var(--accent);
+}
+
 
 .tabs {
   display: flex;

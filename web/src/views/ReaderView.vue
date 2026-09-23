@@ -82,6 +82,7 @@
 
       <AnnotationPanel
         v-if="panelOpen"
+        :book="book"
         :annotations="sortedAnnotations"
         :toc="toc"
         :open="panelOpen"

@@ -1,3 +1,18 @@
+import { pushToGist, getSyncState } from './lib/sync.js'
+
+let syncTimer = null
+function queueGistSync() {
+  try {
+    if (!getSyncState().isConfigured) return
+    clearTimeout(syncTimer)
+    syncTimer = setTimeout(() => {
+      pushToGist().catch((err) => console.warn('[gist-sync] 后台同步失败', err))
+    }, 2000)
+  } catch {
+    /* ignore */
+  }
+}
+
 const BASE = '/api'
 let staticMode = null // null = auto-detect, true = static (GitHub Pages), false = server
 let cachedBooks = []
@@ -174,6 +189,7 @@ export const api = {
   saveProgress: async (id, data) => {
     // 始终本地备份一份，换页无延迟
     setStored('prog_' + id, { ...data, updatedAt: Date.now() })
+    queueGistSync()
     if (staticMode) return { ok: true }
     try {
       return await request(`/books/${id}/progress`, { method: 'PUT', body: data })
@@ -184,6 +200,7 @@ export const api = {
 
   resetProgress: async (id) => {
     removeStored('prog_' + id)
+    queueGistSync()
     if (staticMode) return { ok: true }
     try {
       return await request(`/books/${id}/progress`, { method: 'DELETE' })
@@ -214,6 +231,7 @@ export const api = {
     const list = getStored('ann_' + id, [])
     list.push(item)
     setStored('ann_' + id, list)
+    queueGistSync()
 
     if (staticMode) return item
     try {
@@ -230,6 +248,7 @@ export const api = {
       Object.assign(hit, data, { updatedAt: Date.now() })
       setStored('ann_' + id, list)
     }
+    queueGistSync()
     if (staticMode) return hit || data
     try {
       return await request(`/books/${id}/annotations/${aid}`, { method: 'PATCH', body: data })
@@ -242,6 +261,7 @@ export const api = {
     const list = getStored('ann_' + id, [])
     const next = list.filter((a) => a.id !== aid)
     setStored('ann_' + id, next)
+    queueGistSync()
     if (staticMode) return { ok: true }
     try {
       return await request(`/books/${id}/annotations/${aid}`, { method: 'DELETE' })
@@ -252,6 +272,7 @@ export const api = {
 
   clearAnnotations: async (id) => {
     removeStored('ann_' + id)
+    queueGistSync()
     if (staticMode) return { ok: true }
     try {
       return await request(`/books/${id}/annotations`, { method: 'DELETE' })

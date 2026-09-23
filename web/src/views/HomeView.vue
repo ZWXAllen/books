@@ -178,6 +178,7 @@ import { useRouter } from 'vue-router'
 import { useLibraryStore } from '../stores/library.js'
 import BookCard from '../components/BookCard.vue'
 import SettingsDialog from '../components/SettingsDialog.vue'
+import { getSyncState, pullFromGist } from '../lib/sync.js'
 
 const library = useLibraryStore()
 const router = useRouter()
@@ -236,6 +237,15 @@ onMounted(async () => {
   const saved = localStorage.getItem('shelf-view')
   if (saved === 'grid' || saved === 'list') library.view = saved
   await library.load()
+  // 若已绑定 Gist，静默拉取一次云端笔记（换设备/清缓存场景）
+  if (getSyncState().isConfigured) {
+    try {
+      await pullFromGist()
+      await library.load()
+    } catch (err) {
+      console.warn('[gist-sync] 启动时拉取失败', err)
+    }
+  }
   // PDF 封面在浏览器端渲染一次后缓存到服务端
   library.generateMissingCovers()
 })
