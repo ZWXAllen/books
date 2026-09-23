@@ -34,7 +34,11 @@
         <button class="btn panel-btn" :class="{ active: panelOpen }" @click="panelOpen = !panelOpen">
           ✎ 批注 <em v-if="annotations.length">{{ annotations.length }}</em>
         </button>
-                <button
+        <button class="btn download-btn" title="下载原书文件" @click="downloadBook">
+          <span class="dl-icon">⬇</span>
+          <span class="dl-text">下载</span>
+        </button>
+        <button
           v-if="book?.format === 'epub' || book?.format === 'pdf'"
           class="btn disguise-btn"
           title="伪装模式：看起来像 Cursor / VS Code / 终端 (Ctrl/Cmd+Shift+D)"
@@ -532,6 +536,24 @@ function goHome() {
   flushProgress()
   router.push({ name: 'home' })
 }
+
+async function downloadBook() {
+  if (!book.value) return
+  const url = fileUrl.value
+  const name = book.value.fileName || `${book.value.title || 'book'}.${book.value.format || 'epub'}`
+  try {
+    showToast('正在开始下载…')
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.target = '_blank'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  } catch (err) {
+    showToast(`下载失败：${err.message}`)
+  }
+}
 </script>
 
 <style scoped>
@@ -749,6 +771,32 @@ function goHome() {
   font-weight: 600;
 }
 
+
+.download-btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 550;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.download-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface-2);
+}
+
+.dl-icon {
+  font-size: 13px;
+}
 .reset-btn {
   height: 34px;
   width: 34px;
@@ -875,6 +923,14 @@ function goHome() {
     height: 30px;
     padding: 0 8px;
     font-size: 12px;
+  }
+  .download-btn {
+    height: 30px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  .download-btn .dl-text {
+    display: none;
   }
   .r-title h1 {
     max-width: 150px;
