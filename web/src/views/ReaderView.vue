@@ -1,6 +1,6 @@
 <template>
   <div class="reader">
-    <header class="rbar">
+    <header class="rbar" :class="{ 'hidden-bar': isMobile && !showControls }">
       <div class="r-left">
         <button class="back-btn" @click="goHome" title="返回书架">←</button>
         <div class="r-title">
@@ -23,6 +23,7 @@
           <button class="btn btn-ghost btn-icon" @click="changeFont(10)" title="增大字号">A＋</button>
         </div>
         <button
+          v-if="!isMobile"
           class="btn layout-btn"
           :class="{ active: layoutMode === 'spread' }"
           :title="layoutMode === 'spread' ? '当前：左右双页视图，点击切换单页' : '当前：单页视图，点击切换双页'"
@@ -86,6 +87,7 @@
         <div class="spin" style="font-size: 30px; color: var(--accent)">⟳</div>
       </div>
 
+      <div v-if="isMobile && panelOpen" class="panel-backdrop" @click="panelOpen = false"></div>
       <AnnotationPanel
         v-if="panelOpen"
         :book="book"
@@ -99,6 +101,17 @@
         @remove="removeAnnotation"
         @toc="gotoToc"
       />
+
+      <!-- 移动端全屏模式下的顶部唤起条与底部简易进度条 -->
+      <div v-if="isMobile" class="mobile-tap-zone" @click="toggleMobileControls"></div>
+      <div
+        v-if="isMobile && !showControls"
+        class="mobile-bottom-hud"
+        @click="showControls = true"
+      >
+        <span class="m-hud-title">{{ book?.title }}</span>
+        <span class="m-hud-pct">{{ percent }}%</span>
+      </div>
     </div>
 
     <SelectionToolbar
@@ -182,6 +195,22 @@ const toast = ref('')
 const lastColor = ref('yellow')
 let pending = null
 
+const isMobile = ref(false)
+const showControls = ref(true)
+
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 768
+  if (isMobile.value) {
+    layoutMode.value = 'single'
+  } else {
+    layoutMode.value = localStorage.getItem('reader-layout') || 'spread'
+  }
+}
+
+function toggleMobileControls() {
+  showControls.value = !showControls.value
+}
+
 const fontSize = ref(Number(localStorage.getItem('reader-font') || 100))
 const layoutMode = ref(localStorage.getItem('reader-layout') || 'spread')
 const disguiseOn = ref(false)
@@ -189,10 +218,10 @@ const disguiseTheme = ref(localStorage.getItem('disguise-theme') || 'cursor')
 const disguisePage = ref(0)
 
 function toggleLayout() {
+  if (isMobile.value) return
   layoutMode.value = layoutMode.value === 'spread' ? 'single' : 'spread'
   localStorage.setItem('reader-layout', layoutMode.value)
 }
-
 const initial = ref(null)
 const live = ref({ percent: 0, page: 0, totalPages: 0, chapter: '' })
 
@@ -233,6 +262,8 @@ onMounted(async () => {
   ready.value = true
 
   window.addEventListener('keydown', onKeydown)
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
 
   // ?disguise=1|cursor|vscode|terminal 直接进入伪装
   const dq = String(route.query.disguise || '')
@@ -247,6 +278,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('resize', checkMobile)
   clearTimeout(saveTimer)
   flushProgress()
 })
@@ -797,5 +829,120 @@ function goHome() {
 }
 .disguise-btn:hover {
   background: #243152;
+}
+
+/* 移动端全屏模式样式适配 */
+@media (max-width: 768px) {
+  .rbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    padding: 0 12px;
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1);
+    z-index: 1000;
+  }
+  .rbar.hidden-bar {
+    transform: translateY(-100%);
+  }
+  .r-body {
+    height: 100vh !important;
+    height: 100dvh !important;
+    width: 100vw;
+  }
+  .r-center {
+    display: none !important;
+  }
+  .reset-btn {
+    display: none !important;
+  }
+  .disguise-btn {
+    display: none !important;
+  }
+  .fs-ctl {
+    height: 30px;
+  }
+  .fs-ctl .btn-icon {
+    width: 24px;
+    height: 24px;
+  }
+  .fs-val {
+    width: 32px;
+    font-size: 11px;
+  }
+  .panel-btn {
+    height: 30px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  .r-title h1 {
+    max-width: 150px;
+    font-size: 13px;
+  }
+  .r-title p {
+    display: none;
+  }
+
+  /* 屏幕中央轻触热区唤醒/隐藏工具栏 */
+  .mobile-tap-zone {
+    position: absolute;
+    top: 30%;
+    left: 25%;
+    width: 50%;
+    height: 40%;
+    z-index: 25;
+    cursor: pointer;
+  }
+
+  /* 底部微型半透明状态 HUD */
+  .mobile-bottom-hud {
+    position: absolute;
+    bottom: 8px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: rgba(100, 116, 139, 0.85);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 12px;
+    pointer-events: auto;
+    z-index: 20;
+  }
+  .m-hud-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 75%;
+  }
+  .m-hud-pct {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 侧边面板在手机端作为抽屉全屏覆盖 */
+  .panel {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 85vw !important;
+    max-width: 340px !important;
+    z-index: 1100 !important;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15) !important;
+  }
+  .panel-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 1050;
+  }
 }
 </style>

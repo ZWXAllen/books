@@ -1,7 +1,7 @@
 <template>
   <div class="epub-wrap" :class="[layoutMode]">
     <button class="nav-arrow left" :disabled="atStart" @click="prev" title="上一页 (←)">‹</button>
-    <div class="viewer-wrapper">
+    <div class="viewer-wrapper" @touchstart="onTouchStart" @touchend="onTouchEnd">
       <div class="viewer" ref="viewerEl"></div>
       <div v-if="layoutMode === 'spread'" class="book-spine"></div>
     </div>
@@ -169,6 +169,40 @@ function bindKeys(view) {
       prev()
     }
   })
+  // 触屏滑动翻页与选区监听
+  let startX = 0
+  let startY = 0
+  let startTime = 0
+  doc.addEventListener('touchstart', (e) => {
+    const t = e.touches[0]
+    startX = t.clientX
+    startY = t.clientY
+    startTime = Date.now()
+  }, { passive: true })
+
+  doc.addEventListener('touchend', (e) => {
+    const sel = doc.getSelection()
+    if (sel && !sel.isCollapsed && sel.toString().trim()) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - startX
+    const dy = t.clientY - startY
+    const dt = Date.now() - startTime
+    // 水平滑动手势
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 600) {
+      if (dx < 0) next()
+      else prev()
+      return
+    }
+    // 轻触屏幕边缘翻页（左侧 25% 上一页，右侧 25% 下一页）
+    if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && dt < 400) {
+      const w = doc.documentElement.clientWidth || window.innerWidth
+      if (t.clientX < w * 0.25) {
+        prev()
+      } else if (t.clientX > w * 0.75) {
+        next()
+      }
+    }
+  }, { passive: true })
 
   // 选区结束后通知外部收起工具条
   doc.addEventListener('mouseup', () => {
@@ -177,6 +211,27 @@ function bindKeys(view) {
       if (!sel || sel.isCollapsed) emit('select', null)
     }, 10)
   })
+}
+let wrapStartX = 0
+let wrapStartY = 0
+let wrapStartTime = 0
+
+function onTouchStart(e) {
+  const t = e.touches[0]
+  wrapStartX = t.clientX
+  wrapStartY = t.clientY
+  wrapStartTime = Date.now()
+}
+
+function onTouchEnd(e) {
+  const t = e.changedTouches[0]
+  const dx = t.clientX - wrapStartX
+  const dy = t.clientY - wrapStartY
+  const dt = Date.now() - wrapStartTime
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 600) {
+    if (dx < 0) next()
+    else prev()
+  }
 }
 
 async function next() {
@@ -505,5 +560,23 @@ defineExpose({ next, prev, nextPage: next, prevPage: prev, display, scrollToCfi,
   padding: 10px 16px;
   border-radius: 8px;
   font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .epub-wrap {
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+  .viewer-wrapper {
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .book-spine {
+    display: none !important;
+  }
+  .nav-arrow {
+    display: none !important;
+  }
 }
 </style>

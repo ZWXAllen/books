@@ -1,5 +1,13 @@
 <template>
-  <div class="pdf-reader-wrap" :class="[layoutMode]" ref="wrapEl" @mouseup="onMouseUp" @click="onClick">
+  <div
+    class="pdf-reader-wrap"
+    :class="[layoutMode]"
+    ref="wrapEl"
+    @mouseup="onMouseUp"
+    @click="onClick"
+    @touchstart="onTouchStart"
+    @touchend="onTouchEnd"
+  >
     <!-- 左右翻页按钮 -->
     <button class="nav-arrow left" :disabled="atStart" @click.stop="prevPage" title="上一页 (←)">‹</button>
 
@@ -542,6 +550,39 @@ async function generateCover() {
   }
 }
 
+let touchStartX = 0
+let touchStartY = 0
+let touchStartTime = 0
+
+function onTouchStart(e) {
+  const t = e.touches[0]
+  touchStartX = t.clientX
+  touchStartY = t.clientY
+  touchStartTime = Date.now()
+}
+
+function onTouchEnd(e) {
+  const sel = window.getSelection()
+  if (sel && !sel.isCollapsed && String(sel).trim()) return
+  const t = e.changedTouches[0]
+  const dx = t.clientX - touchStartX
+  const dy = t.clientY - touchStartY
+  const dt = Date.now() - touchStartTime
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 600) {
+    if (dx < 0) nextPage()
+    else prevPage()
+    return
+  }
+  if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && dt < 400) {
+    const w = window.innerWidth
+    if (t.clientX < w * 0.25) {
+      prevPage()
+    } else if (t.clientX > w * 0.75) {
+      nextPage()
+    }
+  }
+}
+
 defineExpose({
   nextPage,
   prevPage,
@@ -779,5 +820,24 @@ defineExpose({
   border-radius: var(--radius);
   font-size: 13px;
   z-index: 40;
+}
+
+@media (max-width: 768px) {
+  .pdf-reader-wrap {
+    background: #ffffff !important;
+  }
+  .stage {
+    padding: 0 !important;
+  }
+  .book-spread {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .book-spine {
+    display: none !important;
+  }
+  .nav-arrow {
+    display: none !important;
+  }
 }
 </style>

@@ -767,4 +767,38 @@ onMounted(async () => {
 .error-toast .close {
   opacity: 0.5;
 }
+
+@media (max-width: 768px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  .actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .search {
+    flex: 1;
+    min-width: 140px;
+  }
+  .s-input {
+    width: 100% !important;
+  }
+  .content {
+    padding: 16px 14px 40px;
+  }
+  .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px 12px !important;
+  }
+  .stat {
+    min-width: 70px;
+    padding: 8px 12px;
+  }
+  .stat b {
+    font-size: 16px;
+  }
+}
 </style>
