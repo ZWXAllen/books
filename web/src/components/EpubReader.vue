@@ -50,7 +50,11 @@ let ro = null
 
 onMounted(async () => {
   try {
-    book = ePub(props.fileUrl)
+    // openAs 强制按压缩包解析，避免超长路径/编码导致误判
+    book = ePub(props.fileUrl, { openAs: 'epub', replacements: 'blobUrl' })
+    await book.ready
+    if (destroyed) return
+
     rendition = book.renderTo(viewerEl.value, {
       width: '100%',
       height: '100%',
@@ -100,7 +104,7 @@ onMounted(async () => {
 
     const startCfi = props.initial?.location || undefined
     await rendition.display(startCfi)
-    await book.ready
+    if (destroyed) return
     loading.value = false
 
     emit('ready', { totalPages: 0 })
@@ -149,9 +153,14 @@ onBeforeUnmount(() => {
 
 /* ------------------------------ 交互 ------------------------------ */
 
+const boundDocs = new WeakSet()
+
 function bindKeys(view) {
   const doc = view?.document
-  if (!doc) return
+  if (!doc || boundDocs.has(doc)) return
+  boundDocs.add(doc)
+
+  doc.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !e.shiftKey)) {
       e.preventDefault()
       next()
@@ -159,6 +168,8 @@ function bindKeys(view) {
       e.preventDefault()
       prev()
     }
+  })
+
   // 选区结束后通知外部收起工具条
   doc.addEventListener('mouseup', () => {
     setTimeout(() => {
@@ -168,14 +179,22 @@ function bindKeys(view) {
   })
 }
 
-function next() {
-  if (atEnd.value) return
-  rendition?.next()
+async function next() {
+  if (atEnd.value || !rendition) return
+  try {
+    await rendition.next()
+  } catch (err) {
+    console.warn('[epub] next failed', err)
+  }
 }
 
-function prev() {
-  if (atStart.value) return
-  rendition?.prev()
+async function prev() {
+  if (atStart.value || !rendition) return
+  try {
+    await rendition.prev()
+  } catch (err) {
+    console.warn('[epub] prev failed', err)
+  }
 }
 
 function onRelocated(location) {

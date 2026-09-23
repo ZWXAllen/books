@@ -75,9 +75,10 @@ async function buildStatic() {
     return
   }
 
-  // 1. 复制书籍原文件到 dist/library
+  // 1. 清空并准备 dist/library（使用短文件名 id.ext，避免超长/特殊字符路径 404）
   console.log('  ├─ 正在复制电子书文件到 dist/library...')
-  copyDirRecursive(LIB_DIR, DIST_LIB)
+  fs.rmSync(DIST_LIB, { recursive: true, force: true })
+  ensureDir(DIST_LIB)
 
   // 2. 复制已有封面到 dist/covers
   if (fs.existsSync(DATA_COVERS)) {
@@ -166,9 +167,17 @@ async function buildStatic() {
       fs.existsSync(path.join(DIST_COVERS, `${id}.png`)) ||
       fs.existsSync(path.join(DIST_COVERS, `${id}.webp`))
 
+    // 静态托管使用短路径，规避 GitHub Pages 对超长中文文件名的兼容问题
+    const staticRel = `${id}${file.ext}`
+    try {
+      fs.copyFileSync(file.full, path.join(DIST_LIB, staticRel))
+    } catch (err) {
+      console.warn(`[copy] 复制失败 ${file.rel}:`, err.message)
+    }
+
     books.push({
       id,
-      relPath: file.rel,
+      relPath: staticRel,
       fileName: baseName,
       format: file.ext === '.pdf' ? 'pdf' : 'epub',
       size: stat.size,

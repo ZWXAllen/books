@@ -289,13 +289,21 @@ export const api = {
   fileUrl: (id, name) => {
     if (staticMode === true) {
       const book = cachedBooks.find((b) => b.id === id)
-      if (book?.relPath) {
-        // 将相对路径各段安全编码，保留 /
-        const encodedRel = book.relPath
+      const rel = book?.relPath || (name ? name : '')
+      if (rel) {
+        // 将相对路径各段安全编码，并基于当前页面目录生成绝对 URL
+        // （避免 hash 路由或深层路径下 ./library 解析错误）
+        const encodedRel = rel
           .split('/')
           .map((seg) => encodeURIComponent(seg))
           .join('/')
-        return `./library/${encodedRel}`
+        try {
+          const pageBase = window.location.href.split('#')[0]
+          const root = pageBase.endsWith('/') ? pageBase : pageBase.replace(/[^/]*$/, '')
+          return new URL(`library/${encodedRel}`, root).href
+        } catch {
+          return `./library/${encodedRel}`
+        }
       }
     }
     return `${BASE}/books/${id}/file/${encodeURIComponent(name || 'book.bin')}`
