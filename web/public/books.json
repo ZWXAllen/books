@@ -1,6 +1,6 @@
 {
   "libraryDir": "library",
-  "scannedAt": 1790132730970,
+  "scannedAt": 1790134822124,
   "books": [
     {
       "id": "218cb578ddd8",
@@ -27,116 +27,12 @@
         "finished": false,
         "updatedAt": null
       }
-    },
-    {
-      "id": "33ef8a89a834",
-      "relPath": "技术/深入理解计算机系统（样例）.pdf",
-      "fileName": "深入理解计算机系统（样例）.pdf",
-      "format": "pdf",
-      "size": 27991,
-      "mtime": 1790125521228.5205,
-      "hasCover": true,
-      "coverUrl": "./covers/33ef8a89a834.jpg",
-      "title": "深入理解计算机系统",
-      "author": "Randal E. Bryant",
-      "description": "",
-      "subject": "",
-      "pageCount": 14,
-      "pubdate": "2026-01-01",
-      "language": "",
-      "category": "技术",
-      "shelf": "技术",
-      "progress": {
-        "percent": 0,
-        "page": 1,
-        "totalPages": 14,
-        "finished": false,
-        "updatedAt": null
-      }
-    },
-    {
-      "id": "f4ccd6f76428",
-      "relPath": "文学/Sample - Clean Code.pdf",
-      "fileName": "Sample - Clean Code.pdf",
-      "format": "pdf",
-      "size": 19641,
-      "mtime": 1790125521278.4683,
-      "hasCover": true,
-      "coverUrl": "./covers/f4ccd6f76428.jpg",
-      "title": "Clean Code",
-      "author": "Robert C. Martin",
-      "description": "",
-      "subject": "",
-      "pageCount": 10,
-      "pubdate": "2026-01-01",
-      "language": "",
-      "category": "文学",
-      "shelf": "文学",
-      "progress": {
-        "percent": 0,
-        "page": 1,
-        "totalPages": 10,
-        "finished": false,
-        "updatedAt": null
-      }
-    },
-    {
-      "id": "684ea0beeb5c",
-      "relPath": "技术/Designing Data-Intensive Applications (Sample).epub",
-      "fileName": "Designing Data-Intensive Applications (Sample).epub",
-      "format": "epub",
-      "size": 42126,
-      "mtime": 1790125521269.8376,
-      "hasCover": true,
-      "coverUrl": "./covers/684ea0beeb5c.jpg",
-      "title": "Designing Data-Intensive Applications",
-      "author": "Martin Kleppmann",
-      "description": "A generated EPUB used to test the Ebook Shelf reader.",
-      "subject": "",
-      "pageCount": 6,
-      "pubdate": "",
-      "language": "en",
-      "category": "技术",
-      "shelf": "技术",
-      "progress": {
-        "percent": 0,
-        "page": 1,
-        "totalPages": 6,
-        "finished": false,
-        "updatedAt": null
-      }
-    },
-    {
-      "id": "ae5be2671392",
-      "relPath": "文学/The Old Man and the Sea (Sample).epub",
-      "fileName": "The Old Man and the Sea (Sample).epub",
-      "format": "epub",
-      "size": 33186,
-      "mtime": 1790125521277.9243,
-      "hasCover": true,
-      "coverUrl": "./covers/ae5be2671392.jpg",
-      "title": "The Old Man and the Sea",
-      "author": "Ernest Hemingway",
-      "description": "A generated EPUB used to test the Ebook Shelf reader.",
-      "subject": "",
-      "pageCount": 5,
-      "pubdate": "",
-      "language": "en",
-      "category": "文学",
-      "shelf": "文学",
-      "progress": {
-        "percent": 0,
-        "page": 1,
-        "totalPages": 5,
-        "finished": false,
-        "updatedAt": null
-      }
     }
   ],
   "stats": {
-    "total": 5,
+    "total": 1,
     "reading": 0,
     "finished": 0,
-    "unread": 5
+    "unread": 1
   }
 }
