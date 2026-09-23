@@ -14,7 +14,18 @@ function queueGistSync() {
 }
 
 const BASE = '/api'
-let staticMode = null // null = auto-detect, true = static (GitHub Pages), false = server
+
+// GitHub Pages 没有后端 API；直接走静态 books.json，避免探测 /api 被油猴脚本劫持后卡住
+function isStaticHost() {
+  try {
+    const host = window.location.hostname || ''
+    return /\.github\.io$/i.test(host) || window.location.protocol === 'file:'
+  } catch {
+    return false
+  }
+}
+
+let staticMode = isStaticHost() ? true : null // null = auto-detect, true = static, false = server
 let cachedBooks = []
 
 // 本地存储键前缀
