@@ -189,6 +189,7 @@ import { getSyncState, pullFromGist } from '../lib/sync.js'
 const library = useLibraryStore()
 const router = useRouter()
 const showSettings = ref(false)
+const disguiseLaunch = ref(localStorage.getItem('disguise-launch') === '1')
 
 const continueBook = computed(() => {
   const list = library.books.filter((b) => (b.progress?.percent || 0) > 0 && (b.progress?.percent || 0) < 99.5)
