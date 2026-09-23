@@ -71,7 +71,7 @@ export async function extractEpubTextPages(fileUrl, opts = {}) {
       const body = doc?.body || doc?.documentElement
       const text = normalizeText(body?.innerText || body?.textContent || '')
       section.unload?.()
-      if (text && text.length > 20) {
+      if (text && text.length > 5) {
         chapterBlocks.push({ index: idx, text })
       }
     } catch (err) {

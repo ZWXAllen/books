@@ -1,5 +1,5 @@
 <template>
-  <div class="disguise" :class="theme" tabindex="0" ref="rootEl" @keydown="onKey">
+  <div class="disguise" :class="[theme, modeClass]" tabindex="0" ref="rootEl" @keydown="onKey">
     <!-- ========== Cursor / VS Code ========== -->
     <template v-if="theme === 'cursor' || theme === 'vscode'">
       <div class="titlebar">
@@ -10,7 +10,7 @@
           <span class="win-title">{{ windowTitle }}</span>
         </div>
         <div class="titlebar-right">
-          <button class="tb-btn" title="切换主题" @click.stop="cycleTheme">{{ themeLabel }}</button>
+          <button class="tb-btn" title="切换主题 (T)" @click.stop="cycleTheme">{{ themeLabel }}</button>
           <button class="tb-btn danger" title="退出伪装 (Esc)" @click.stop="$emit('exit')">退出</button>
         </div>
       </div>
@@ -29,7 +29,12 @@
           <div class="side-head">EXPLORER</div>
           <div class="side-project">{{ projectName }}</div>
           <ul class="tree">
-            <li v-for="f in fakeFiles" :key="f.path" :class="{ active: f.path === activeFile, folder: f.folder }" @click="!f.folder && (activeFile = f.path)">
+            <li
+              v-for="f in fakeFiles"
+              :key="f.path"
+              :class="{ active: f.path === activeFile, folder: f.folder }"
+              @click="!f.folder && (activeFile = f.path)"
+            >
               <span class="indent" :style="{ width: f.depth * 12 + 'px' }"></span>
               <span class="ico">{{ f.folder ? '📁' : fileIcon(f.path) }}</span>
               <span class="name">{{ f.name }}</span>
@@ -49,27 +54,57 @@
               <span>{{ t.split('/').pop() }}</span>
             </div>
             <div class="tabs-grow"></div>
-            <div class="tab-hint">↑↓ / PgUp PgDn 翻页 · Esc 退出</div>
+            <div class="tab-hint">{{ mode === 'text' ? '↑↓ / PgUp PgDn 翻页 · Esc 退出' : '← → / 空格翻页 · Esc 退出' }}</div>
           </div>
 
-          <div class="code-pane" ref="paneEl">
+          <!-- 文本模式 -->
+          <div v-if="mode === 'text'" class="code-pane" ref="paneEl">
             <div class="gutter">
               <span v-for="n in lineCount" :key="n">{{ n }}</span>
             </div>
             <pre class="code" :style="{ fontSize: fontPx + 'px' }"><code>{{ decoratedPage }}</code></pre>
           </div>
 
+          <!-- 扫描版 / 图片 EPUB：内嵌真实阅读器 -->
+          <div v-else-if="mode === 'viewer'" class="viewer-pane">
+            <div class="viewer-mask-top">{{ activeFile }} — preview</div>
+            <EpubReader
+              v-if="format === 'epub'"
+              ref="readerRef"
+              :book-id="bookId"
+              :file-url="fileUrl"
+              :annotations="[]"
+              :initial="viewerInitial"
+              :font-size="100"
+              layout-mode="single"
+              @progress="onViewerProgress"
+            />
+            <PdfReader
+              v-else-if="format === 'pdf'"
+              ref="readerRef"
+              :book-id="bookId"
+              :file-url="fileUrl"
+              :annotations="[]"
+              :initial="viewerInitial"
+              :has-cover="false"
+              layout-mode="single"
+              @progress="onViewerProgress"
+            />
+          </div>
+
           <div class="statusbar">
             <div class="sb-left">
               <span>{{ branchLabel }}</span>
-              <span>Ln {{ page + 1 }}, Col 1</span>
+              <span v-if="mode === 'text'">Ln {{ page + 1 }}, Col 1</span>
+              <span v-else>Preview</span>
               <span>{{ percent }}%</span>
             </div>
             <div class="sb-right">
               <span>UTF-8</span>
-              <span>Markdown</span>
+              <span>{{ mode === 'text' ? 'Markdown' : (format === 'pdf' ? 'PDF Preview' : 'Preview') }}</span>
               <span>{{ theme === 'cursor' ? 'Cursor Tab' : 'Prettier' }}</span>
-              <span>{{ page + 1 }} / {{ totalPages || '…' }}</span>
+              <span v-if="mode === 'text'">{{ page + 1 }} / {{ totalPages || '…' }}</span>
+              <span v-else>{{ statusLabel }}</span>
             </div>
           </div>
         </section>
@@ -82,8 +117,9 @@
           <div class="chat-body">
             <div class="bubble user">继续帮我看这段逻辑，别改接口。</div>
             <div class="bubble ai">
-              <p>好的，我先按文件上下文阅读。当前这段可以理解成业务说明：</p>
-              <pre class="ai-quote">{{ pagePreview }}</pre>
+              <p>好的，我先按文件上下文阅读。</p>
+              <pre v-if="mode === 'text'" class="ai-quote">{{ pagePreview }}</pre>
+              <pre v-else class="ai-quote">正在预览二进制/排版资源，建议按页翻看截图式内容。</pre>
               <p>需要我继续往下翻，还是抽出关键步骤？</p>
             </div>
           </div>
@@ -107,12 +143,41 @@
           <button class="tb-btn danger" @click.stop="$emit('exit')">退出</button>
         </div>
       </div>
-      <div class="term-body" ref="paneEl">
+
+      <div v-if="mode === 'text'" class="term-body" ref="paneEl">
         <div class="term-line dim">{{ userHost }}:~/work/app$ less docs/brief.md</div>
         <div class="term-line dim"># {{ camouflageName }} — page {{ page + 1 }}/{{ totalPages || '?' }} ({{ percent }}%)</div>
         <div class="term-line dim"># keys: j/k ↑↓ PgUp/PgDn  next/prev · q Esc quit</div>
         <pre class="term-pre" :style="{ fontSize: fontPx + 'px' }">{{ pageText }}</pre>
         <div class="term-prompt">:</div>
+      </div>
+
+      <div v-else class="term-viewer">
+        <div class="term-line dim term-pad">{{ userHost }}:~/work/app$ open docs/brief.pdf</div>
+        <div class="viewer-pane terminal-viewer">
+          <EpubReader
+            v-if="format === 'epub'"
+            ref="readerRef"
+            :book-id="bookId"
+            :file-url="fileUrl"
+            :annotations="[]"
+            :initial="viewerInitial"
+            :font-size="100"
+            layout-mode="single"
+            @progress="onViewerProgress"
+          />
+          <PdfReader
+            v-else-if="format === 'pdf'"
+            ref="readerRef"
+            :book-id="bookId"
+            :file-url="fileUrl"
+            :annotations="[]"
+            :initial="viewerInitial"
+            :has-cover="false"
+            layout-mode="single"
+            @progress="onViewerProgress"
+          />
+        </div>
       </div>
     </template>
 
@@ -132,14 +197,19 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { extractEpubTextPages } from '../lib/epubText.js'
+import EpubReader from './EpubReader.vue'
+import PdfReader from './PdfReader.vue'
+
 const props = defineProps({
   bookId: { type: String, required: true },
   fileUrl: { type: String, required: true },
   bookTitle: { type: String, default: '' },
   bookAuthor: { type: String, default: '' },
+  format: { type: String, default: 'epub' }, // epub | pdf
   initialPage: { type: Number, default: 0 },
+  initial: { type: Object, default: null },
   theme: { type: String, default: 'cursor' } // cursor | vscode | terminal
 })
 
@@ -147,14 +217,19 @@ const emit = defineEmits(['exit', 'progress', 'theme-change'])
 
 const rootEl = ref(null)
 const paneEl = ref(null)
+const readerRef = ref(null)
 const loading = ref(true)
 const error = ref('')
+const mode = ref('text') // text | viewer
 const pages = ref([])
 const page = ref(0)
 const sidebarOpen = ref(true)
 const chatOpen = ref(true)
 const fontPx = ref(14)
 const activeFile = ref('docs/brief.md')
+const viewerPercent = ref(0)
+const viewerPage = ref(1)
+const viewerTotal = ref(0)
 
 const FAKE_TREE = [
   { path: 'src', name: 'src', folder: true, depth: 0 },
@@ -179,6 +254,7 @@ const themeLabel = computed(() => ({
   terminal: 'Terminal'
 }[props.theme] || props.theme))
 
+const modeClass = computed(() => (mode.value === 'viewer' ? 'is-viewer' : 'is-text'))
 const projectName = computed(() => (props.theme === 'cursor' ? 'WORKSPACE' : 'APP'))
 const branchLabel = computed(() => (props.theme === 'cursor' ? '⎇ main*' : 'main*'))
 const camouflageName = computed(() => 'workspace-notes')
@@ -190,20 +266,25 @@ const windowTitle = computed(() => {
   return `${file} — ${projectName.value} — Visual Studio Code`
 })
 
-const termTitle = computed(() => `${userHost.value} — less — 80x24`)
+const termTitle = computed(() => `${userHost.value} — ${mode.value === 'viewer' ? 'preview' : 'less'} — 80x24`)
 
 const totalPages = computed(() => pages.value.length)
 const pageText = computed(() => pages.value[page.value] || '')
 const percent = computed(() => {
+  if (mode.value === 'viewer') return Math.round(viewerPercent.value || 0)
   if (!totalPages.value) return 0
   return Math.min(100, Math.round(((page.value + 1) / totalPages.value) * 1000) / 10)
+})
+
+const statusLabel = computed(() => {
+  if (viewerTotal.value) return `${viewerPage.value} / ${viewerTotal.value}`
+  return `${percent.value}%`
 })
 
 const pageLines = computed(() => (pageText.value ? pageText.value.split('\n') : ['']))
 const lineCount = computed(() => Math.max(pageLines.value.length, 24))
 
 const decoratedPage = computed(() => {
-  // 伪装成 markdown / 注释文档，避免一眼看出是小说排版
   const body = pageText.value || ''
   return [
     `<!-- ${camouflageName.value} | chunk ${page.value + 1} -->`,
@@ -219,6 +300,8 @@ const pagePreview = computed(() => {
   return t.slice(0, 160) + (t.length > 160 ? '…' : '')
 })
 
+const viewerInitial = computed(() => props.initial || null)
+
 let oldTitle = ''
 
 onMounted(async () => {
@@ -226,17 +309,41 @@ onMounted(async () => {
   applyDocTitle()
   rootEl.value?.focus()
 
+  // PDF 直接走内嵌阅读器
+  if (props.format === 'pdf') {
+    mode.value = 'viewer'
+    activeFile.value = 'docs/brief.pdf'
+    loading.value = false
+    await nextTick()
+    rootEl.value?.focus()
+    return
+  }
+
   try {
     const data = await extractEpubTextPages(props.fileUrl, { charsPerPage: 1000 })
-    pages.value = data.pages
-    if (!pages.value.length) throw new Error('未能从这本书提取到文本（可能是扫描版/纯图片 EPUB）')
+    pages.value = data.pages || []
+    if (!pages.value.length) {
+      // 扫描版 / 纯图片 EPUB：回退到内嵌阅读器
+      mode.value = 'viewer'
+      activeFile.value = 'docs/preview.bin.md'
+      loading.value = false
+      await nextTick()
+      rootEl.value?.focus()
+      return
+    }
     const start = Math.min(Math.max(0, props.initialPage | 0), pages.value.length - 1)
     page.value = start
+    mode.value = 'text'
     loading.value = false
     emitProgress()
   } catch (err) {
-    error.value = err.message || String(err)
+    // 解析失败也回退到阅读器，而不是直接报错挡住
+    console.warn('[disguise] text extract failed, fallback to viewer', err)
+    mode.value = 'viewer'
+    activeFile.value = 'docs/preview.bin.md'
     loading.value = false
+    await nextTick()
+    rootEl.value?.focus()
   }
 })
 
@@ -254,7 +361,6 @@ watch(
 watch(page, () => {
   applyDocTitle()
   emitProgress()
-  // 滚回顶部
   if (paneEl.value) paneEl.value.scrollTop = 0
 })
 
@@ -263,6 +369,7 @@ function applyDocTitle() {
 }
 
 function emitProgress() {
+  if (mode.value !== 'text') return
   emit('progress', {
     percent: percent.value,
     page: page.value + 1,
@@ -271,7 +378,6 @@ function emitProgress() {
     chapter: '',
     kind: 'disguise'
   })
-  // 本地额外存伪装页码，方便下次接着看
   try {
     localStorage.setItem('disguise_page_' + props.bookId, String(page.value))
   } catch {
@@ -279,11 +385,29 @@ function emitProgress() {
   }
 }
 
+function onViewerProgress(p) {
+  viewerPercent.value = p.percent || 0
+  viewerPage.value = p.page || 1
+  viewerTotal.value = p.totalPages || 0
+  emit('progress', {
+    ...p,
+    kind: p.kind || props.format
+  })
+}
+
 function next() {
+  if (mode.value === 'viewer') {
+    readerRef.value?.nextPage?.() || readerRef.value?.next?.()
+    return
+  }
   if (page.value < totalPages.value - 1) page.value += 1
 }
 
 function prev() {
+  if (mode.value === 'viewer') {
+    readerRef.value?.prevPage?.() || readerRef.value?.prev?.()
+    return
+  }
   if (page.value > 0) page.value -= 1
 }
 
@@ -321,6 +445,7 @@ function fileIcon(path) {
   if (path.endsWith('.js')) return '🟨'
   if (path.endsWith('.md')) return '📝'
   if (path.endsWith('.json')) return '🧱'
+  if (path.endsWith('.pdf')) return '📕'
   return '📄'
 }
 
@@ -341,7 +466,6 @@ defineExpose({ next, prev })
   user-select: text;
 }
 
-/* ---- shared title ---- */
 .titlebar, .term-chrome {
   height: 38px;
   display: flex;
@@ -372,7 +496,6 @@ defineExpose({ next, prev })
 .tb-btn:hover { background: #4a4a4a; }
 .tb-btn.danger { border-color: #744; color: #f8b; }
 
-/* ---- ide layout ---- */
 .ide-body { flex: 1; display: flex; min-height: 0; }
 .activity {
   width: 48px;
@@ -486,8 +609,42 @@ defineExpose({ next, prev })
   line-height: 1.65;
   color: #d4d4d4;
 }
-.vscode .code { color: #ce9178; } /* 字符串色，更像代码 */
+.vscode .code { color: #ce9178; }
 .cursor .code { color: #c8c8c8; }
+
+.viewer-pane {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #111;
+  overflow: hidden;
+}
+.viewer-mask-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 11px;
+  color: #8a8a8a;
+  background: linear-gradient(#1e1e1e, transparent);
+  pointer-events: none;
+}
+.viewer-pane :deep(.epub-wrap),
+.viewer-pane :deep(.pdf-wrap) {
+  height: 100%;
+  background: #1e1e1e;
+}
+.viewer-pane :deep(.nav-arrow) {
+  opacity: 0.35;
+}
+.viewer-pane :deep(.book-spine) {
+  display: none;
+}
 
 .statusbar {
   height: 24px;
@@ -549,7 +706,6 @@ defineExpose({ next, prev })
   font-size: 12px;
 }
 
-/* ---- terminal ---- */
 .disguise.terminal { background: #0c0c0c; color: #d6ffd6; }
 .term-chrome { background: #1a1a1a; }
 .term-body {
@@ -558,6 +714,19 @@ defineExpose({ next, prev })
   padding: 14px 16px 24px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   background: #0c0c0c;
+}
+.term-viewer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0c0c0c;
+}
+.term-pad { padding: 10px 16px 0; }
+.terminal-viewer {
+  margin: 8px 12px 12px;
+  border: 1px solid #1f3a1f;
+  border-radius: 6px;
 }
 .term-line { font-size: 12px; margin-bottom: 4px; }
 .term-line.dim { color: #6a9; opacity: 0.85; }
@@ -573,7 +742,6 @@ defineExpose({ next, prev })
   font-weight: 700;
 }
 
-/* ---- boot ---- */
 .boot {
   position: absolute;
   inset: 0;

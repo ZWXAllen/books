@@ -233,7 +233,7 @@ function toggleView() {
 
 function openBook(book) {
   const query = {}
-  if (disguiseLaunch.value && book.format === 'epub') {
+  if (disguiseLaunch.value && (book.format === 'epub' || book.format === 'pdf')) {
     query.disguise = localStorage.getItem('disguise-theme') || 'cursor'
   }
   router.push({ name: 'reader', params: { id: book.id }, query })

@@ -33,10 +33,10 @@
         <button class="btn panel-btn" :class="{ active: panelOpen }" @click="panelOpen = !panelOpen">
           ✎ 批注 <em v-if="annotations.length">{{ annotations.length }}</em>
         </button>
-        <button
-          v-if="book?.format === 'epub'"
+                <button
+          v-if="book?.format === 'epub' || book?.format === 'pdf'"
           class="btn disguise-btn"
-          title="伪装模式：看起来像 Cursor / VS Code / 终端 (Ctrl+Shift+D)"
+          title="伪装模式：看起来像 Cursor / VS Code / 终端 (Ctrl/Cmd+Shift+D)"
           @click="enterDisguise"
         >🎭 伪装</button>
         <button class="btn reset-btn" title="清除这本书的阅读进度" @click="resetProgress">↺</button>
@@ -126,12 +126,14 @@
     </transition>
 
     <DisguiseReader
-      v-if="disguiseOn && book?.format === 'epub'"
+      v-if="disguiseOn && (book?.format === 'epub' || book?.format === 'pdf')"
       :book-id="book.id"
       :file-url="fileUrl"
       :book-title="book.title"
       :book-author="book.author || ''"
+      :format="book.format"
       :initial-page="disguisePage"
+      :initial="initial"
       :theme="disguiseTheme"
       @exit="exitDisguise"
       @progress="onDisguiseProgress"
@@ -234,7 +236,7 @@ onMounted(async () => {
 
   // ?disguise=1|cursor|vscode|terminal 直接进入伪装
   const dq = String(route.query.disguise || '')
-  if (dq && book.value?.format === 'epub') {
+  if (dq && (book.value?.format === 'epub' || book.value?.format === 'pdf')) {
     if (['cursor', 'vscode', 'terminal'].includes(dq)) {
       disguiseTheme.value = dq
       localStorage.setItem('disguise-theme', dq)
@@ -256,7 +258,7 @@ function onKeydown(e) {
   // Ctrl/Cmd + Shift + D 开关伪装模式
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
     e.preventDefault()
-    if (book.value?.format === 'epub') {
+    if (book.value?.format === 'epub' || book.value?.format === 'pdf') {
       if (disguiseOn.value) exitDisguise()
       else enterDisguise()
     }
@@ -283,8 +285,8 @@ function onKeydown(e) {
 }
 
 function enterDisguise() {
-  if (book.value?.format !== 'epub') {
-    showToast('伪装模式目前仅支持 EPUB')
+  if (book.value?.format !== 'epub' && book.value?.format !== 'pdf') {
+    showToast('伪装模式目前仅支持 EPUB / PDF')
     return
   }
   try {
