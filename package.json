@@ -1,0 +1,31 @@
+{
+  "name": "ebook-shelf",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "本地电子书阅读平台 - 扫描目录、书架展示、PDF/EPUB 阅读、进度与划线批注",
+  "scripts": {
+    "dev": "concurrently -k -n server,web -c blue,magenta \"node server/index.js\" \"vite\"",
+    "server": "node server/index.js",
+    "web": "vite",
+    "build": "vite build && node scripts/build-static.mjs",
+    "build:static": "vite build && node scripts/build-static.mjs",
+    "start": "NODE_ENV=production node server/index.js",
+    "fixtures": "node scripts/make-fixtures.mjs"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "cors": "^2.8.5",
+    "epubjs": "^0.3.93",
+    "express": "^4.21.2",
+    "pinia": "^2.3.1",
+    "pdfjs-dist": "^4.10.38",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "concurrently": "^9.1.2",
+    "vite": "^6.0.11"
+  }
+}

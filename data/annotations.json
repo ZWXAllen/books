@@ -1,0 +1,68 @@
+{
+  "33ef8a89a834": [
+    {
+      "id": "an_mudfntdt_phu5w",
+      "color": "blue",
+      "note": "PDF 划线备注测试",
+      "createdAt": 1790127445889,
+      "updatedAt": 1790127448848,
+      "type": "pdf",
+      "text": "Reading is to the mind what exe",
+      "chapter": "",
+      "page": 2,
+      "rects": [
+        {
+          "x": 0.10082632211538461,
+          "y": 0.17963442595108695,
+          "w": 0.3096490713266226,
+          "h": 0.018342391304347828
+        }
+      ]
+    },
+    {
+      "id": "an_mudfr5t6_yhgtb",
+      "color": "yellow",
+      "note": "PDF 划线备注测试",
+      "createdAt": 1790127601962,
+      "updatedAt": 1790127604730,
+      "type": "pdf",
+      "text": "There is no friend as loyal as a b",
+      "chapter": "",
+      "page": 3,
+      "rects": [
+        {
+          "x": 0.10082632211538461,
+          "y": 0.17963442595108695,
+          "w": 0.3134729238656851,
+          "h": 0.018342391304347828
+        }
+      ]
+    }
+  ],
+  "684ea0beeb5c": [
+    {
+      "id": "an_mudfqqrj_dishn",
+      "color": "green",
+      "note": "自动化测试写入的备注。",
+      "createdAt": 1790127582463,
+      "updatedAt": 1790127585618,
+      "type": "epub",
+      "text": "A reader lives a thousand lives before he dies. The man who never reads lives on",
+      "chapter": "Chapter 1 · Beginnings",
+      "cfi": "epubcfi(/6/4!/4/4,/1:0,/1:80)"
+    }
+  ],
+  "ae5be2671392": [
+    {
+      "id": "an_mudh8eij_z00s8",
+      "color": "purple",
+      "note": "",
+      "createdAt": 1790130086011,
+      "updatedAt": 1790130086011,
+      "type": "epub",
+      "text": "There is no friend as loyal as a book, no counsel so patient, no voice so lasting. Books are a uniquely portable magic, a door into another mind and another time.",
+      "chapter": "Chapter 4 · What the Water Knew",
+      "cfi": "epubcfi(/6/10!/4/22,/1:0,/1:162)"
+    }
+  ]
+}

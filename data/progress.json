@@ -1,0 +1,38 @@
+{
+  "218cb578ddd8": {
+    "percent": 96.8,
+    "page": 0,
+    "totalPages": 0,
+    "location": "epubcfi(/6/52!/4/188/2/2/1:0)",
+    "ratioInPage": null,
+    "chapter": "附录 美国消费者心态形成简史",
+    "updatedAt": 1790131679340
+  },
+  "684ea0beeb5c": {
+    "percent": 0,
+    "page": 0,
+    "totalPages": 0,
+    "location": "epubcfi(/6/2!/4/1:0)",
+    "ratioInPage": null,
+    "chapter": "",
+    "updatedAt": 1790129589961
+  },
+  "33ef8a89a834": {
+    "percent": 100,
+    "page": 14,
+    "totalPages": 14,
+    "location": null,
+    "ratioInPage": null,
+    "chapter": "",
+    "updatedAt": 1790130388755
+  },
+  "ae5be2671392": {
+    "percent": 100,
+    "page": 0,
+    "totalPages": 0,
+    "location": "epubcfi(/6/10!/4/2/1:0)",
+    "ratioInPage": null,
+    "chapter": "Chapter 4 · What the Water Knew",
+    "updatedAt": 1790130990505
+  }
+}
